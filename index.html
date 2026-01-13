@@ -3,235 +3,243 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Desafío Digital: Sopa de Letras Cap. 1</title>
+    <title>Sopa de Letras Pro - Sistemas Digitales</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;800&family=JetBrains+Mono:wght@700&display=swap');
         
         :root {
-            --bg-dark: #0f172a;
+            --bg-dark: #020617;
             --primary: #3b82f6;
             --accent: #10b981;
-            --circuit-line: rgba(59, 130, 246, 0.1);
+            --cell-bg: #1e293b;
         }
 
         body {
             font-family: 'Plus Jakarta Sans', sans-serif;
             background-color: var(--bg-dark);
-            background-image: radial-gradient(var(--circuit-line) 1px, transparent 1px);
-            background-size: 30px 30px;
             color: #f8fafc;
-            min-height: 100vh;
+            margin: 0;
+            overflow-x: hidden;
         }
 
-        /* Contenedor dinámico de máximo impacto visual */
+        /* Maximización del Tablero */
+        .game-wrapper {
+            display: flex;
+            flex-direction: row;
+            gap: 20px;
+            padding: 20px;
+            height: calc(100vh - 120px);
+            align-items: stretch;
+        }
+
         .grid-container {
             display: grid;
-            gap: 6px;
-            background: #1e293b;
-            padding: 15px;
-            border-radius: 20px;
-            box-shadow: 0 30px 60px -12px rgba(0, 0, 0, 0.6);
+            gap: 4px;
+            background: #0f172a;
+            padding: 12px;
+            border-radius: 16px;
+            box-shadow: 0 0 40px rgba(0, 0, 0, 0.5);
+            flex-grow: 2;
             user-select: none;
             touch-action: none;
-            margin: auto;
-            border: 2px solid rgba(59, 130, 246, 0.2);
         }
 
         .letter-cell {
-            aspect-ratio: 1;
             display: flex;
             align-items: center;
             justify-content: center;
-            background: #334155;
-            border-radius: 6px;
+            background: var(--cell-bg);
+            border-radius: 4px;
             font-family: 'JetBrains Mono', monospace;
-            font-size: 1.3rem; /* Letras más grandes */
+            font-size: clamp(0.7rem, 1.5vw, 1.3rem);
+            font-weight: 700;
             cursor: pointer;
-            transition: all 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+            transition: all 0.1s;
             color: #94a3b8;
+            aspect-ratio: 1 / 1;
         }
 
-        .letter-cell:hover { 
-            background: #475569; 
+        .letter-cell:hover {
+            background: #334155;
             color: white;
             transform: scale(1.05);
+            z-index: 10;
         }
 
         .letter-cell.selecting {
             background: var(--primary);
             color: white;
-            transform: scale(0.92);
         }
 
         .letter-cell.found {
             background: var(--accent);
             color: white;
-            animation: success-pulse 0.4s ease;
+            animation: pop 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
         }
 
-        @keyframes success-pulse {
+        @keyframes pop {
             0% { transform: scale(1); }
-            50% { transform: scale(1.2); }
+            50% { transform: scale(1.3); }
             100% { transform: scale(1); }
         }
 
-        .word-item { 
-            transition: all 0.3s; 
-            border: 1px solid rgba(255,255,255,0.05);
+        /* Panel Lateral de Palabras */
+        .sidebar {
+            width: 300px;
+            background: rgba(15, 23, 42, 0.8);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            padding: 20px;
+            border: 1px solid #1e293b;
+            display: flex;
+            flex-direction: column;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
         }
 
-        .word-found {
-            background: var(--accent) !important;
-            color: white !important;
+        .word-list {
+            overflow-y: auto;
+            flex-grow: 1;
+        }
+
+        .word-item {
+            padding: 8px 15px;
+            margin-bottom: 6px;
+            border-radius: 10px;
+            background: #0f172a;
+            border: 1px solid #1e293b;
+            font-size: 0.85rem;
+            font-weight: 600;
+            transition: 0.3s;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .word-item.completed {
+            background: rgba(16, 185, 129, 0.1);
+            border-color: var(--accent);
+            color: var(--accent);
             text-decoration: line-through;
-            opacity: 0.6;
-            transform: scale(0.95);
+            opacity: 0.7;
         }
 
-        .circuit-bg {
+        .circuit-deco {
             position: fixed;
             top: 0; left: 0; width: 100%; height: 100%;
             pointer-events: none;
             z-index: -1;
-            opacity: 0.15;
-        }
-
-        /* Estilo para el scroll de la lista de palabras si es muy larga */
-        .word-list-container {
-            max-height: 60vh;
-            overflow-y: auto;
-        }
-
-        .word-list-container::-webkit-scrollbar {
-            width: 4px;
-        }
-        .word-list-container::-webkit-scrollbar-thumb {
-            background: var(--primary);
-            border-radius: 10px;
+            opacity: 0.05;
+            background-image: url("data:image/svg+xml,%3Csvg width='100' height='100' viewBox='0 0 100 100' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M10 10L90 10M90 10L90 90M90 90L10 90M10 90L10 10' fill='none' stroke='white' stroke-width='0.5'/%3E%3Ccircle cx='10' cy='10' r='2' fill='white'/%3E%3C/svg%3E");
         }
 
         @media (max-width: 1024px) {
-            .letter-cell { font-size: 1rem; }
-            .grid-container { gap: 4px; padding: 10px; }
-        }
-
-        @media (max-width: 640px) {
-            .letter-cell { font-size: 0.75rem; }
-            .grid-container { gap: 2px; padding: 5px; }
+            .game-wrapper { flex-direction: column; height: auto; }
+            .sidebar { width: 100%; }
+            .grid-container { height: 70vh; }
         }
     </style>
 </head>
-<body class="p-4 md:p-6 lg:p-10">
+<body>
 
-    <!-- Decoración de fondo -->
-    <svg class="circuit-bg" viewBox="0 0 100 100">
-        <path d="M0,20 L20,20 L25,15 L50,15 L55,20 L100,20" fill="none" stroke="#3b82f6" stroke-width="0.05" />
-        <path d="M10,0 L10,30 L5,35" fill="none" stroke="#3b82f6" stroke-width="0.05" />
-        <circle cx="20" cy="20" r="0.3" fill="#3b82f6" />
-    </svg>
+    <div class="circuit-deco"></div>
 
-    <div class="max-w-[1600px] mx-auto">
-        <!-- Encabezado Principal -->
-        <div class="text-center mb-10">
-            <div class="inline-flex items-center gap-2 px-4 py-1 rounded-full bg-blue-500/10 border border-blue-400/20 text-blue-400 text-xs font-black tracking-widest uppercase mb-4">
-                <i class="fas fa-gamepad"></i> Gamificación Educativa
+    <!-- Header Minimalista -->
+    <header class="py-4 px-8 flex justify-between items-center bg-slate-950 border-b border-slate-800">
+        <div class="flex items-center gap-4">
+            <div class="w-10 h-10 bg-blue-600 rounded-lg flex items-center justify-center text-white shadow-lg shadow-blue-900/50">
+                <i class="fas fa-microchip text-xl"></i>
             </div>
-            <h1 class="text-4xl md:text-6xl font-black mb-2 tracking-tighter text-white">SOPA DE LETRAS DIGITAL</h1>
-            <p class="text-slate-400 font-medium">Capítulo 1: Sistemas Numéricos y Aritmética de Hardware</p>
+            <div>
+                <h1 class="text-xl font-black tracking-tighter uppercase leading-none">Desafío Lógico</h1>
+                <span class="text-[10px] font-bold text-blue-400 tracking-[0.2em] uppercase">Sistemas Digitales I</span>
+            </div>
+        </div>
+        
+        <div class="flex items-center gap-8">
+            <div class="text-center">
+                <span class="block text-[9px] font-bold text-slate-500 uppercase tracking-widest">Cronómetro</span>
+                <span id="timer" class="text-xl font-black text-white mono">00:00</span>
+            </div>
+            <button onclick="window.location.reload()" class="bg-slate-800 hover:bg-blue-600 text-white p-3 rounded-xl transition-all shadow-lg">
+                <i class="fas fa-sync-alt"></i>
+            </button>
+        </div>
+    </header>
+
+    <main class="game-wrapper">
+        
+        <!-- Tablero Principal (Gigante) -->
+        <div id="gridBoard" class="grid-container">
+            <!-- Inyectado por JS -->
         </div>
 
-        <div class="grid lg:grid-cols-12 gap-8 items-start">
-            
-            <!-- Panel Izquierdo (MÁS PEQUEÑO): Lista de Palabras -->
-            <div class="lg:col-span-3 bg-slate-900/90 backdrop-blur-2xl p-6 rounded-[2rem] border border-slate-800 shadow-2xl sticky top-6">
-                <div class="flex items-center justify-between mb-6">
-                    <h2 class="text-lg font-extrabold flex items-center gap-2">
-                        <i class="fas fa-terminal text-blue-500"></i> LISTA
-                    </h2>
-                    <span class="text-[10px] font-bold text-slate-500 bg-slate-800 px-2 py-1 rounded-md uppercase" id="wordCountLabel">12 PALABRAS</span>
-                </div>
-
-                <div class="word-list-container pr-2" id="wordListDisplay">
-                    <!-- Palabras inyectadas aquí -->
-                </div>
-                
-                <div class="mt-8 space-y-4">
-                    <div class="p-4 bg-blue-600/5 rounded-xl border border-blue-500/10">
-                        <p class="text-[10px] text-slate-500 uppercase font-black mb-1">Pista de Ingeniería</p>
-                        <p class="text-xs text-slate-400 leading-relaxed italic">Busca en todas las direcciones, incluyendo diagonales inversas.</p>
-                    </div>
-
-                    <button onclick="window.location.reload()" class="w-full py-4 bg-slate-800 hover:bg-blue-600 text-white rounded-xl font-black transition-all shadow-lg text-xs uppercase tracking-widest flex items-center justify-center gap-2">
-                        <i class="fas fa-sync-alt"></i> Nuevo Tablero
-                    </button>
-                </div>
+        <!-- Panel Lateral -->
+        <aside class="sidebar">
+            <div class="mb-6">
+                <h2 class="text-lg font-extrabold flex items-center gap-2">
+                    <i class="fas fa-list-ul text-blue-500"></i> Diccionario
+                </h2>
+                <p class="text-[10px] text-slate-400 font-medium">Encuentra los términos del Capítulo 1</p>
             </div>
 
-            <!-- Panel Derecho (MÁS GRANDE): El Tablero -->
-            <div class="lg:col-span-9 flex flex-col items-center">
-                <div class="grid-container" id="gridBoard">
-                    <!-- Las celdas se inyectan aquí con GRID_SIZE -->
-                </div>
-                
-                <!-- Barra de Estado Inferior -->
-                <div class="mt-8 w-full bg-slate-900/60 backdrop-blur-md p-5 rounded-3xl border border-slate-800 flex flex-wrap justify-between items-center gap-6 shadow-2xl">
-                    <div class="flex items-center gap-8">
-                        <div class="flex flex-col">
-                            <span class="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1">Progreso</span>
-                            <div class="flex items-end gap-2">
-                                <span class="text-4xl font-black text-blue-500 leading-none" id="foundCount">0</span>
-                                <span class="text-slate-600 font-bold">/ 12</span>
-                            </div>
-                        </div>
-                        <div class="h-10 w-px bg-slate-800 hidden sm:block"></div>
-                        <div class="flex flex-col">
-                            <span class="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1">Tiempo de Respuesta</span>
-                            <span class="text-3xl font-black text-slate-300 mono leading-none" id="timer">00:00</span>
-                        </div>
-                    </div>
-
-                    <div id="victoryMsg" class="hidden">
-                        <div class="flex items-center gap-4 bg-emerald-500 text-white px-8 py-3 rounded-2xl shadow-[0_0_20px_rgba(16,185,129,0.4)] animate-bounce">
-                            <i class="fas fa-check-double text-xl"></i>
-                            <span class="font-black uppercase text-sm tracking-tighter">¡Compilación Exitosa!</span>
-                        </div>
-                    </div>
-                </div>
+            <div id="wordList" class="word-list custom-scrollbar">
+                <!-- Inyectado por JS -->
             </div>
 
+            <div class="mt-6 pt-4 border-t border-slate-800">
+                <div class="flex justify-between items-end mb-4">
+                    <span class="text-[10px] font-bold text-slate-500 uppercase">Progreso</span>
+                    <span id="progressText" class="text-2xl font-black text-blue-500">0/12</span>
+                </div>
+                <div class="w-full bg-slate-800 h-2 rounded-full overflow-hidden">
+                    <div id="progressBar" class="bg-blue-600 h-full w-0 transition-all duration-500"></div>
+                </div>
+            </div>
+        </aside>
+    </main>
+
+    <!-- Modal de Victoria -->
+    <div id="victoryModal" class="fixed inset-0 bg-black/90 z-[100] hidden flex items-center justify-center p-6">
+        <div class="bg-slate-900 border-2 border-emerald-500 p-10 rounded-[3rem] text-center max-w-md shadow-[0_0_50px_rgba(16,185,129,0.3)]">
+            <div class="w-20 h-20 bg-emerald-500 text-white rounded-full flex items-center justify-center text-4xl mx-auto mb-6">
+                <i class="fas fa-trophy"></i>
+            </div>
+            <h2 class="text-3xl font-black mb-2">¡SISTEMA OPTIMIZADO!</h2>
+            <p class="text-slate-400 mb-8 leading-relaxed">Has localizado todos los conceptos clave de los sistemas numéricos en tiempo récord.</p>
+            <button onclick="window.location.reload()" class="w-full py-4 bg-emerald-600 hover:bg-emerald-500 text-white rounded-2xl font-bold transition-all uppercase tracking-widest text-xs">
+                Reiniciar Servidor
+            </button>
         </div>
     </div>
 
     <script>
-        // --- DATA DEL CURSO ---
         const WORDS = [
             "ARITMETICA", "COMPLEMENTO", "HEXADECIMAL", "BINARIO",
             "OCTAL", "DECIMAL", "RADIX", "DIGITO",
             "SUMADOR", "BCD", "SIGNO", "ACARREO"
         ];
-        const GRID_SIZE = 15; // Aumentado ligeramente para mejor distribución visual
+        const GRID_SIZE = 20; // Tamaño masivo
         
         let grid = [];
         let foundWords = [];
         let isSelecting = false;
-        let selectionStart = null;
+        let startCell = null;
         let currentSelection = [];
-        let timerSeconds = 0;
-        let timerInterval = null;
+        let seconds = 0;
 
-        // --- LÓGICA DE GENERACIÓN ---
-        function initGame() {
+        function init() {
+            // Inicializar grid vacío
             grid = Array(GRID_SIZE).fill(null).map(() => Array(GRID_SIZE).fill(' '));
             
-            // 1. Priorizar palabras largas
+            // 1. Ordenar palabras por longitud descendente
             const sortedWords = [...WORDS].sort((a, b) => b.length - a.length);
             
-            // 2. Colocación robusta
+            // 2. Colocar palabras
             sortedWords.forEach(word => placeWord(word));
             
-            // 3. Relleno aleatorio
+            // 3. Rellenar con letras aleatorias
             for(let r=0; r<GRID_SIZE; r++) {
                 for(let c=0; c<GRID_SIZE; c++) {
                     if(grid[r][c] === ' ') {
@@ -240,24 +248,25 @@
                 }
             }
 
-            renderBoard();
-            renderWordList();
+            render();
             startTimer();
         }
 
         function placeWord(word) {
-            const directions = [[0, 1], [1, 0], [1, 1], [-1, 1], [0, -1], [1, -1]];
+            const directions = [
+                [0, 1], [1, 0], [1, 1], [-1, 1], [0, -1], [-1, 0], [-1, -1], [1, -1]
+            ];
             let placed = false;
             let attempts = 0;
-            
-            while(!placed && attempts < 1000) {
+
+            while (!placed && attempts < 1000) {
                 const dir = directions[Math.floor(Math.random() * directions.length)];
-                const startR = Math.floor(Math.random() * GRID_SIZE);
-                const startC = Math.floor(Math.random() * GRID_SIZE);
-                
-                if(canPlace(word, startR, startC, dir)) {
-                    for(let i=0; i<word.length; i++) {
-                        grid[startR + i*dir[0]][startC + i*dir[1]] = word[i];
+                const r = Math.floor(Math.random() * GRID_SIZE);
+                const c = Math.floor(Math.random() * GRID_SIZE);
+
+                if (canPlace(word, r, c, dir)) {
+                    for (let i = 0; i < word.length; i++) {
+                        grid[r + i * dir[0]][c + i * dir[1]] = word[i];
                     }
                     placed = true;
                 }
@@ -266,150 +275,140 @@
         }
 
         function canPlace(word, r, c, dir) {
-            for(let i=0; i<word.length; i++) {
-                const newR = r + i*dir[0];
-                const newC = c + i*dir[1];
-                if(newR < 0 || newR >= GRID_SIZE || newC < 0 || newC >= GRID_SIZE) return false;
-                if(grid[newR][newC] !== ' ' && grid[newR][newC] !== word[i]) return false;
+            for (let i = 0; i < word.length; i++) {
+                const nr = r + i * dir[0];
+                const nc = c + i * dir[1];
+                if (nr < 0 || nr >= GRID_SIZE || nc < 0 || nc >= GRID_SIZE) return false;
+                if (grid[nr][nc] !== ' ' && grid[nr][nc] !== word[i]) return false;
             }
             return true;
         }
 
-        // --- RENDERIZADO ---
-        function renderBoard() {
+        function render() {
             const board = document.getElementById('gridBoard');
-            board.innerHTML = '';
             board.style.gridTemplateColumns = `repeat(${GRID_SIZE}, 1fr)`;
-            
-            // Cálculo de tamaño dinámico basado en el viewport para que siempre sea grande
-            const cellSize = Math.min(60, Math.floor(800 / GRID_SIZE));
-            
-            for(let r=0; r<GRID_SIZE; r++) {
-                for(let c=0; c<GRID_SIZE; c++) {
+            board.innerHTML = '';
+
+            for (let r = 0; r < GRID_SIZE; r++) {
+                for (let c = 0; c < GRID_SIZE; c++) {
                     const cell = document.createElement('div');
                     cell.className = 'letter-cell';
                     cell.innerText = grid[r][c];
                     cell.dataset.r = r;
                     cell.dataset.c = c;
                     
-                    cell.addEventListener('mousedown', startSelection);
-                    cell.addEventListener('mouseover', updateSelection);
-                    cell.addEventListener('mouseup', endSelection);
+                    cell.addEventListener('mousedown', startSelect);
+                    cell.addEventListener('mouseenter', updateSelect);
+                    cell.addEventListener('mouseup', endSelect);
                     
-                    // Soporte Touch
-                    cell.addEventListener('touchstart', (e) => { e.preventDefault(); startSelection(e); });
+                    // Touch events
+                    cell.addEventListener('touchstart', (e) => { e.preventDefault(); startSelect(e); });
                     cell.addEventListener('touchmove', (e) => {
                         e.preventDefault();
                         const touch = e.touches[0];
                         const el = document.elementFromPoint(touch.clientX, touch.clientY);
-                        if(el && el.classList.contains('letter-cell')) updateSelection({ target: el });
+                        if (el && el.classList.contains('letter-cell')) updateSelect({ target: el });
                     });
-                    cell.addEventListener('touchend', endSelection);
-                    
+                    cell.addEventListener('touchend', endSelect);
+
                     board.appendChild(cell);
                 }
             }
-            window.addEventListener('mouseup', endSelection);
-        }
 
-        function renderWordList() {
-            const display = document.getElementById('wordListDisplay');
-            display.innerHTML = '';
+            const list = document.getElementById('wordList');
+            list.innerHTML = '';
             WORDS.sort().forEach(word => {
-                const div = document.createElement('div');
-                div.className = 'word-item bg-slate-800/40 border border-slate-800 p-3 rounded-xl text-[11px] font-bold text-slate-400 mb-2 flex justify-between items-center';
-                div.id = `word-${word}`;
-                div.innerHTML = `<span>${word}</span> <i class="fas fa-ellipsis-h opacity-20"></i>`;
-                display.appendChild(div);
+                const item = document.createElement('div');
+                item.className = 'word-item';
+                item.id = `list-${word}`;
+                item.innerHTML = `<span>${word}</span> <i class="fas fa-circle-notch opacity-20"></i>`;
+                list.appendChild(item);
             });
         }
 
-        // --- INTERACCIÓN ---
-        function startSelection(e) {
+        function startSelect(e) {
             isSelecting = true;
-            const target = e.target.closest('.letter-cell');
-            if(!target) return;
-            selectionStart = { r: parseInt(target.dataset.r), c: parseInt(target.dataset.c) };
-            clearSelection();
-            addToSelection(target);
+            startCell = e.target;
+            currentSelection = [startCell];
+            startCell.classList.add('selecting');
         }
 
-        function updateSelection(e) {
-            if(!isSelecting) return;
-            const target = e.target.closest('.letter-cell');
-            if(!target) return;
-            
-            const current = { r: parseInt(target.dataset.r), c: parseInt(target.dataset.c) };
-            const dr = current.r - selectionStart.r;
-            const dc = current.c - selectionStart.c;
-            
-            if(Math.abs(dr) === Math.abs(dc) || dr === 0 || dc === 0) {
-                clearSelection();
-                const steps = Math.max(Math.abs(dr), Math.abs(dc));
-                const stepR = dr === 0 ? 0 : dr / steps;
-                const stepC = dc === 0 ? 0 : dc / steps;
+        function updateSelect(e) {
+            if (!isSelecting) return;
+            const target = e.target;
+            if (target === startCell || !target.classList.contains('letter-cell')) return;
+
+            const r1 = parseInt(startCell.dataset.r);
+            const c1 = parseInt(startCell.dataset.c);
+            const r2 = parseInt(target.dataset.r);
+            const c2 = parseInt(target.dataset.c);
+
+            // Calcular dirección
+            const dr = r2 - r1;
+            const dc = c2 - c1;
+            const dist = Math.max(Math.abs(dr), Math.abs(dc));
+
+            // Solo permitir líneas rectas
+            if (dr === 0 || dc === 0 || Math.abs(dr) === Math.abs(dc)) {
+                document.querySelectorAll('.letter-cell.selecting').forEach(el => el.classList.remove('selecting'));
+                currentSelection = [];
                 
-                for(let i=0; i<=steps; i++) {
-                    const r = selectionStart.r + i*stepR;
-                    const c = selectionStart.c + i*stepC;
-                    const cell = document.querySelector(`[data-r="${r}"][data-c="${c}"]`);
-                    if(cell) addToSelection(cell);
+                const stepR = dr === 0 ? 0 : dr / dist;
+                const stepC = dc === 0 ? 0 : dc / dist;
+
+                for (let i = 0; i <= dist; i++) {
+                    const cell = document.querySelector(`[data-r="${r1 + i * stepR}"][data-c="${c1 + i * stepC}"]`);
+                    if (cell) {
+                        cell.classList.add('selecting');
+                        currentSelection.push(cell);
+                    }
                 }
             }
         }
 
-        function endSelection() {
-            if(!isSelecting) return;
+        function endSelect() {
+            if (!isSelecting) return;
             isSelecting = false;
             
-            const selectedWord = currentSelection.map(c => c.innerText).join('');
-            const reversedWord = selectedWord.split('').reverse().join('');
-            
-            if(WORDS.includes(selectedWord) && !foundWords.includes(selectedWord)) {
-                markFound(selectedWord);
-            } else if(WORDS.includes(reversedWord) && !foundWords.includes(reversedWord)) {
-                markFound(reversedWord);
+            const word = currentSelection.map(c => c.innerText).join('');
+            const reversed = word.split('').reverse().join('');
+
+            if (WORDS.includes(word) && !foundWords.includes(word)) {
+                markFound(word);
+            } else if (WORDS.includes(reversed) && !foundWords.includes(reversed)) {
+                markFound(reversed);
             }
-            
-            clearSelection();
-        }
 
-        function addToSelection(cell) {
-            cell.classList.add('selecting');
-            currentSelection.push(cell);
-        }
-
-        function clearSelection() {
-            document.querySelectorAll('.letter-cell.selecting').forEach(c => c.classList.remove('selecting'));
-            currentSelection = [];
+            document.querySelectorAll('.letter-cell.selecting').forEach(el => el.classList.remove('selecting'));
         }
 
         function markFound(word) {
             foundWords.push(word);
             currentSelection.forEach(c => c.classList.add('found'));
             
-            const item = document.getElementById(`word-${word}`);
-            item.classList.add('word-found');
-            item.querySelector('i').className = "fas fa-check-circle";
-            
-            document.getElementById('foundCount').innerText = foundWords.length;
-            
-            if(foundWords.length === WORDS.length) {
-                clearInterval(timerInterval);
-                document.getElementById('victoryMsg').classList.remove('hidden');
+            const listItem = document.getElementById(`list-${word}`);
+            listItem.classList.add('completed');
+            listItem.querySelector('i').className = "fas fa-check-circle";
+
+            const progress = (foundWords.length / WORDS.length) * 100;
+            document.getElementById('progressBar').style.width = progress + '%';
+            document.getElementById('progressText').innerText = `${foundWords.length}/${WORDS.length}`;
+
+            if (foundWords.length === WORDS.length) {
+                document.getElementById('victoryModal').classList.remove('hidden');
             }
         }
 
         function startTimer() {
-            timerInterval = setInterval(() => {
-                timerSeconds++;
-                const mins = Math.floor(timerSeconds / 60).toString().padStart(2, '0');
-                const secs = (timerSeconds % 60).toString().padStart(2, '0');
-                document.getElementById('timer').innerText = `${mins}:${secs}`;
+            setInterval(() => {
+                seconds++;
+                const m = Math.floor(seconds / 60).toString().padStart(2, '0');
+                const s = (seconds % 60).toString().padStart(2, '0');
+                document.getElementById('timer').innerText = `${m}:${s}`;
             }, 1000);
         }
 
-        window.onload = initGame;
+        window.onload = init;
     </script>
 </body>
 </html>
